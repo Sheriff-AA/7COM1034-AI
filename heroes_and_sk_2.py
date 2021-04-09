@@ -61,7 +61,7 @@ def sort_char(state):
 
 
 if __name__ == "__main__":
-    def depth_first_search(class_name, state, visited_states):
+    def depth_first_search(class_name, state, visited_states, counter):
         vs_node = sort_char(state)
         # b = set([vs_node])
         if vs_node in visited_states:
@@ -70,32 +70,85 @@ if __name__ == "__main__":
         visited_states = visited_states.union(set([vs_node]))
 
         if class_name.goal(state):
+            # print(len(visited_states))
+            print(counter)
             return [state]
         for successor_state in class_name.successor(state):
-            solved = depth_first_search(class_name, successor_state, visited_states)
+            counter += 1
+            solved = depth_first_search(class_name, successor_state, visited_states, counter)
             if solved:
                 return [state] + solved
 
-    def breadth_first_search(instance, paths):
+    def breadth_first_search(instance, paths, counter):
+        counter += 1
         if not paths:
             return
         candidate = paths.pop(0)
         current_state = candidate[-1]
 
         if instance.goal(current_state):
+            print(counter)
             return candidate
 
         for successor in instance.successor(current_state):
             paths.append(candidate + [successor])
 
-        return breadth_first_search(instance, paths)
+        return breadth_first_search(instance, paths, counter)
+
+    def hero_heuristics(state):
+        character_pos, _ = state
+        x = [char for char in character_pos if character_pos[char] == "Right"]
+        return len(x)
+
+    def sorter(elem):
+        a = hero_heuristics(elem[-1])
+        b = len(elem) - 1
+        return a + b
+
+
+    def queueing_fn(array):
+        x = sorted(array, key=sorter, reverse=True)
+        return x
+
+    def best_first_search(instance, paths, visited_states, counter):
+        counter += 1
+        if not paths:
+            return
+
+        path = paths.pop(0)
+        curr_state = path[-1]
+        toll = sort_char(curr_state)
+
+        if toll in visited_states:
+            return best_first_search(instance, paths, visited_states, counter)
+        visited_states = visited_states.union(set([toll]))
+
+        if instance.goal(curr_state):
+            # print(len(visited_states))
+            print(counter)
+            return path
+
+        for next_state in instance.successor(curr_state):
+            paths.append(path + [next_state])
+
+        paths = queueing_fn(paths)
+        return best_first_search(instance, paths, visited_states, counter)
 
 
     hero_class = HeroSidekicks()
     game = hero_class.start()
     visited = set()
-    for path in depth_first_search(hero_class, game, visited):
-        print(path)
+    count = 0
+    empty_list = list()
+    for sol in depth_first_search(hero_class, game, visited, count):
+        print(sol)
+
     print("*" * 100)
-    for sol in breadth_first_search(hero_class, [[game]]):
+
+    for sol in breadth_first_search(hero_class, [[game]], count):
+        print(sol)
+
+    print("*" * 100)
+
+    for sol in best_first_search(hero_class, [[game]], visited, count):
         print(sol)
